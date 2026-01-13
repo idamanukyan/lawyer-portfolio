@@ -9,11 +9,33 @@ export default function Contact() {
     subject: '',
     message: '',
   })
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [errorMessage, setErrorMessage] = useState('')
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Form submission logic would go here
-    console.log('Form submitted:', formData)
+    setStatus('loading')
+    setErrorMessage('')
+
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to send message')
+      }
+
+      setStatus('success')
+      setFormData({ name: '', email: '', subject: '', message: '' })
+    } catch {
+      setStatus('error')
+      setErrorMessage('Failed to send message. Please try again or email directly.')
+    }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -148,12 +170,25 @@ export default function Contact() {
                 />
               </div>
 
+              {/* Status Messages */}
+              {status === 'success' && (
+                <div className="p-4 bg-green-500/20 border border-green-500/30 rounded-lg text-green-400">
+                  Thank you for your message. I will get back to you soon.
+                </div>
+              )}
+              {status === 'error' && (
+                <div className="p-4 bg-red-500/20 border border-red-500/30 rounded-lg text-red-400">
+                  {errorMessage}
+                </div>
+              )}
+
               {/* Submit Button */}
               <button
                 type="submit"
-                className="w-full px-8 py-4 bg-accent hover:bg-accent/90 text-white font-semibold rounded-lg shadow-lg shadow-accent/25 transition-all duration-300 hover:shadow-xl hover:shadow-accent/30 hover:-translate-y-0.5"
+                disabled={status === 'loading'}
+                className="w-full px-8 py-4 bg-accent hover:bg-accent/90 text-white font-semibold rounded-lg shadow-lg shadow-accent/25 transition-all duration-300 hover:shadow-xl hover:shadow-accent/30 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
               >
-                Submit Inquiry
+                {status === 'loading' ? 'Sending...' : 'Submit Inquiry'}
               </button>
             </form>
           </div>
